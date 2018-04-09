@@ -17,9 +17,12 @@ public class BarcodeRequestPresenter {
 
     private String[] patientSampleIdPair;
 
-    public BarcodeRequestPresenter(BarcodeRequestView barcodeRequestView, BarcodeRequestModel barcodeRequestModel) {
+    private String user;
+
+    public BarcodeRequestPresenter(BarcodeRequestView barcodeRequestView, BarcodeRequestModel barcodeRequestModel, String user) {
         this.barcodeRequestView = barcodeRequestView;
         this.barcodeRequestModel = barcodeRequestModel;
+        this.user = user;
         giveLifeToElements();
     }
 
@@ -41,6 +44,7 @@ public class BarcodeRequestPresenter {
         });
 
         barcodeRequestView.getPatentIdSampleIdButton().addClickListener(clickEvent -> {
+            log.info(String.format("%s: Patient/Sample ID pair requested by user %s", AppInfo.getAppInfo(), this.user));
             barcodeRequestView.getPatentIdSampleIdButton().setEnabled(false);
             barcodeRequestView.getTaskSelectionGroup().setEnabled(false);
             Thread request = new RequestThread();
@@ -50,6 +54,7 @@ public class BarcodeRequestPresenter {
 
 
         barcodeRequestView.getCreateSampleButton().addClickListener(clickEvent -> {
+            log.info(String.format("%s: Additional DNA sample requested by user %s", AppInfo.getAppInfo(), this.user));
             barcodeRequestView.getCreateSampleButton().setEnabled(false);
             barcodeRequestView.getTaskSelectionGroup().setEnabled(false);
             Thread request = new NewSampleRequestThread();

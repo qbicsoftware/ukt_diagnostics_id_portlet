@@ -21,7 +21,7 @@ public class BarcodeRequestPresenterTest {
         this.barcodeRequestView = new BarcodeRequestViewImpl();
         this.barcodeRequestModel = new BarcodeRequestModelImpl(openBisClient);
 
-        this.barcodeRequestPresenter = new BarcodeRequestPresenter(this.barcodeRequestView, this.barcodeRequestModel);
+        this.barcodeRequestPresenter = new BarcodeRequestPresenter(this.barcodeRequestView, this.barcodeRequestModel, "test");
     }
 
     @Test
