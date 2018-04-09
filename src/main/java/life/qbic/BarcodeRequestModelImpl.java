@@ -39,12 +39,12 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
         int[] sizes = getNumberOfSampleTypes();
 
         // offset is +2, because there is always an attachment sample per project
-        String biologicalSampleCodeBlood = createBarcodeFromInteger(sizes[0] + 2 );
-        String biologicalSampleCodeTumor = createBarcodeFromInteger(sizes[0] + 3 );
+        String biologicalSampleCodeBlood = createBarcodeFromInteger(sizes[0] + 1 );
+        String biologicalSampleCodeTumor = createBarcodeFromInteger(sizes[0] + 2 );
 
         // offset is +3, because of the previous created sample and the attachement
-        String testSampleCodeBlood = createBarcodeFromInteger(sizes[0] + 4);
-        String testSampleCodeTumor = createBarcodeFromInteger(sizes[0] + 5);
+        String testSampleCodeBlood = createBarcodeFromInteger(sizes[0] + 3);
+        String testSampleCodeTumor = createBarcodeFromInteger(sizes[0] + 4);
         String patientId = CODE + "ENTITY-" + (sizes[1] + 1);
 
         patientSampleIdPair[0] = patientId;
@@ -54,14 +54,16 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
         log.debug(String.format("Number of non-entity samples: %s", sizes[0]));
         log.info(String.format("%s: New patient ID created %s", AppInfo.getAppInfo(), patientSampleIdPair[0]));
         log.info(String.format("%s: New tumor sample ID created %s", AppInfo.getAppInfo(), patientSampleIdPair[1]));
+        log.info(String.format("%s: New tumor DNA sample ID created %s", AppInfo.getAppInfo(), biologicalSampleCodeTumor));
         log.info(String.format("%s: New blood sample ID created %s", AppInfo.getAppInfo(), biologicalSampleCodeBlood));
         log.info(String.format("%s: New blood DNA sample ID created %s", AppInfo.getAppInfo(), testSampleCodeBlood));
 
         // In case registration fails, return null
+        
         if(!registerNewPatient(patientId, biologicalSampleCodeTumor,
                 biologicalSampleCodeBlood, testSampleCodeTumor, testSampleCodeBlood))
             patientSampleIdPair = null;
-
+        
     }
 
 
@@ -77,11 +79,51 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
         List<Sample> sampleList = openBisClient.getSamplesOfProject(PROJECTID);
         List<Sample> entities = getEntities(sampleList);
 
-        int nonEntitySamples = sampleList.size() - entities.size();
-
-        sizes[0] = nonEntitySamples;
+        String highestID = null;
+        // Filter sample list for Q_BIOLOGICAL_SAMPLE and Q_TEST_SAMPLE
+        for(Sample s : sampleList){
+            if (s.getSampleTypeCode().equals("Q_BIOLOGICAL_SAMPLE") || s.getSampleTypeCode().equals("Q_TEST_SAMPLE")){
+                String idCount = s.getCode().substring(5, 9);
+                if (highestID == null){
+                    highestID = idCount;
+                } else {
+                    if (isIdHigher(highestID, idCount))
+                        highestID = idCount;
+                }
+            }
+        }
+        log.info(convertIdToInt(highestID));
+        sizes[0] = convertIdToInt(highestID);
         sizes[1] = entities.size();
         return sizes;
+    }
+
+    private boolean isIdHigher(String idA, String idB){
+
+        // Compare the letter first
+        // eg: B < Z 
+        if (idB.toCharArray()[3] > idA.toCharArray()[3])
+            return true;
+        // B < Z
+        if (idB.toCharArray()[3] < idA.toCharArray()[3])
+            return false;
+        // Compare the digits
+        // eg. 002 > 001
+        if (Integer.parseInt(idB.substring(0,3)) > Integer.parseInt(idA.substring(0,3)))
+            return true;
+        return false;
+    }
+
+    private int convertIdToInt(String id){
+        int iterator = Integer.parseInt(id.substring(0, 3));
+        char idChar = id.charAt(3);
+
+        int multiplier = 0;
+        for (int i=0; i<ALPHABET.length; i++){
+            if (idChar == ALPHABET[i])
+                multiplier = i;
+        }
+        return multiplier * 1000 + iterator;  
     }
 
     @Override
