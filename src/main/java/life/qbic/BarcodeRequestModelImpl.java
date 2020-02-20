@@ -84,7 +84,7 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
      */
     private int[] getNumberOfSampleTypes(){
         int[] sizes = new int[2];
-        List<Sample> sampleList = this.getSamplesOfProject(PROJECTID);
+        List<Sample> sampleList = this.getSamplesOfProject(CODE);
         List<Sample> entities = getEntities(sampleList);
 
         String highestID = null;
@@ -109,13 +109,13 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
     private List<Sample> getSamplesOfProject(String id) {
         IApplicationServerApi apiConnection = obisSession.api;
         SampleSearchCriteria criteria = new SampleSearchCriteria();
-        criteria.withProject().withCode().thatEquals(CODE);
+        criteria.withCode().thatContains(id);
 
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
         fetchOptions.withType();
 
         SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
-        log.info("Found "+ result.getObjects().size() + " samples for project " + CODE + ".");
+        log.info("Found "+ result.getObjects().size() + " samples for project " + id + ".");
         return result.getObjects();
     }
 
@@ -224,7 +224,7 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
     public List<String> getRegisteredPatients() {
         IApplicationServerApi apiConnection = obisSession.api;
         SampleSearchCriteria criteria = new SampleSearchCriteria();
-        criteria.withProject().withCode().thatEquals(CODE);
+        criteria.withCode().thatContains(CODE);
 
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
         fetchOptions.withType();
