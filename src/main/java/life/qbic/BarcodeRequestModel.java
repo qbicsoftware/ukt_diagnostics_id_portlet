@@ -1,6 +1,7 @@
 package life.qbic;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface BarcodeRequestModel {
 
@@ -41,5 +42,5 @@ public interface BarcodeRequestModel {
      * Querries all registered patient IDs
      * @return A collection of patient IDs
      */
-    Collection<String> getRegisteredPatients();
+    List<String> getRegisteredPatients();
 }

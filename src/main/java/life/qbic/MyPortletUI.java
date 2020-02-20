@@ -52,15 +52,19 @@ public class MyPortletUI extends UI {
             testing = false;
         }
 
+        String[] credentials = getCredentials();
+        OpenBisSession obisSession = new OpenBisSession(credentials[2], credentials[0], credentials[1]);
+
         OpenBisClient openBisClient = makeOpenBisClient();
-        if (openBisClient == null){
+
+        if (obisSession.token == null){
             showNotiffication("Could not initialize connection to openBIS", Notification.Type.ERROR_MESSAGE);
             layout.addComponent(new Label("<h1>Error</h1>Something went wrong, please contact: helpdesk@qbic.uni-tuebingen.de", ContentMode.HTML));
             return;
         }
 
         final BarcodeRequestView requestView = new BarcodeRequestViewImpl();
-        final BarcodeRequestModel barcodeRequestModel = new BarcodeRequestModelImpl(openBisClient);
+        final BarcodeRequestModel barcodeRequestModel = new BarcodeRequestModelImpl(obisSession, openBisClient);
         final BarcodeRequestPresenter barcodeRequestPresenter = new BarcodeRequestPresenter(requestView, barcodeRequestModel, userID);
 
         layout.addComponent(requestView.getFullView());
