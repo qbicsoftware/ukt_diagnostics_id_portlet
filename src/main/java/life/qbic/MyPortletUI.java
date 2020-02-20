@@ -20,6 +20,7 @@ import com.vaadin.ui.VerticalLayout;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
+import life.qbic.portal.utils.PortalUtils;
 
 import java.io.BufferedReader;
 import java.nio.file.Files;
@@ -45,8 +46,8 @@ public class MyPortletUI extends UI {
         setContent(layout);
 
         String userID = "MISSING SCREENNAME";
-        if (LiferayAndVaadinUtils.isLiferayPortlet()) {
-            userID = LiferayAndVaadinUtils.getUser().getScreenName();
+        if (PortalUtils.isLiferayPortlet()) {
+            userID = PortalUtils.getUser().getScreenName();
             portletContextName = getPortletContextName(request);
             testing = false;
         }
