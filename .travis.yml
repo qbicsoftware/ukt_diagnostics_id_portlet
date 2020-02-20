@@ -11,11 +11,6 @@ branches:
   - master
   - development
   - /^[vV]?\d+\.\d+\.\d+$/ # matches e.g., v1.2.3, 1.2.3, V1.2.3
-before_install:
-  - unset _JAVA_OPTIONS
-  - wget http://repo2.maven.org/maven2/com/h2database/h2/1.4.199/h2-1.4.199.jar
-  - java -cp $TRAVIS_BUILD_DIR/h2*.jar org.h2.tools.RunScript -url jdbc:h2:$TRAVIS_BUILD_DIR/workflows -script $TRAVIS_BUILD_DIR/src/test/resources/db-setup.sql -user testuser
-  - export H2_PATH=$TRAVIS_BUILD_DIR
 install:
 - "$HOME/miniconda3/bin/conda --version || ./.install-reports-dependencies.sh"
 before_script: if [ "$VAADIN_CHARTS_LICENSE_CODE" != "" ]; then echo "$VAADIN_CHARTS_LICENSE_CODE"
