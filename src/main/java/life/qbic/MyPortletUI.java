@@ -55,7 +55,6 @@ public class MyPortletUI extends UI {
         String[] credentials = getCredentials();
         OpenBisSession obisSession = new OpenBisSession(credentials[2], credentials[0], credentials[1]);
 
-        OpenBisClient openBisClient = makeOpenBisClient();
 
         if (obisSession.token == null){
             showNotiffication("Could not initialize connection to openBIS", Notification.Type.ERROR_MESSAGE);
@@ -71,26 +70,6 @@ public class MyPortletUI extends UI {
 
     }
 
-    /**
-     * Create, check and return openBisClient object
-     * @return OpenbisClient
-     */
-    private OpenBisClient makeOpenBisClient(){
-
-        String[] credentials = getCredentials();
-        if (credentials == null){
-            return null;
-        }
-        OpenBisClient openBisClient = new OpenBisClient(credentials[0], credentials[1], credentials[2]);
-        try{
-            openBisClient.login();
-        } catch (Exception exc){
-            log.error(exc);
-            return null;
-        }
-
-        return openBisClient;
-    }
 
 
     /**
