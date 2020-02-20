@@ -1,6 +1,10 @@
 package life.qbic;
 
-import ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Sample;
+import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import life.qbic.helpers.BarcodeFunctions;
@@ -13,6 +17,8 @@ import java.util.stream.Collectors;
 import static life.qbic.helpers.BarcodeFunctions.checksum;
 
 public class BarcodeRequestModelImpl implements BarcodeRequestModel{
+
+    private final OpenBisSession obisSession;
 
     private final OpenBisClient openBisClient;
 
@@ -28,8 +34,10 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
 
     private static String[] patientSampleIdPair= null;
 
-    public BarcodeRequestModelImpl(OpenBisClient openBisClient){
-        this.openBisClient = openBisClient;
+    public BarcodeRequestModelImpl(OpenBisSession session, OpenBisClient client){
+
+        this.obisSession = session;
+        this.openBisClient = client;
     }
 
     @Override
@@ -76,13 +84,13 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
      */
     private int[] getNumberOfSampleTypes(){
         int[] sizes = new int[2];
-        List<Sample> sampleList = openBisClient.getSamplesOfProject(PROJECTID);
+        List<Sample> sampleList = this.getSamplesOfProject(CODE);
         List<Sample> entities = getEntities(sampleList);
 
         String highestID = null;
         // Filter sample list for Q_BIOLOGICAL_SAMPLE and Q_TEST_SAMPLE
         for(Sample s : sampleList){
-            if (s.getSampleTypeCode().equals("Q_BIOLOGICAL_SAMPLE") || s.getSampleTypeCode().equals("Q_TEST_SAMPLE")){
+            if (s.getType().getCode().equals("Q_BIOLOGICAL_SAMPLE") || s.getType().getCode().equals("Q_TEST_SAMPLE")){
                 String idCount = s.getCode().substring(5, 9);
                 if (highestID == null){
                     highestID = idCount;
@@ -96,6 +104,19 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
         sizes[0] = convertIdToInt(highestID);
         sizes[1] = entities.size();
         return sizes;
+    }
+
+    private List<Sample> getSamplesOfProject(String id) {
+        IApplicationServerApi apiConnection = obisSession.api;
+        SampleSearchCriteria criteria = new SampleSearchCriteria();
+        criteria.withCode().thatContains(id);
+
+        SampleFetchOptions fetchOptions = new SampleFetchOptions();
+        fetchOptions.withType();
+
+        SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
+        log.info("Found "+ result.getObjects().size() + " samples for project " + id + ".");
+        return result.getObjects();
     }
 
     private boolean isIdHigher(String idA, String idB){
@@ -135,7 +156,15 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
     public boolean checkIfPatientExists(String sampleID) {
         Sample sample;
         try{
-            sample = openBisClient.getSampleByIdentifier("/" + SPACE + "/" + sampleID);
+            IApplicationServerApi apiConnection = obisSession.api;
+            SampleSearchCriteria criteria = new SampleSearchCriteria();
+            criteria.withCode().thatEquals(sampleID);
+
+            SampleFetchOptions fetchOptions = new SampleFetchOptions();
+            fetchOptions.withType();
+
+            SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
+            sample = result.getObjects().get(0);
         } catch (Exception exc){
             log.error(exc);
             return false;
@@ -145,17 +174,29 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
 
     @Override
     public String addNewSampleToPatient(String patientID, String filterProperty) {
-        List<Sample> sampleList = openBisClient.getSamplesWithParentsAndChildren(patientID).get(0).getChildren();
 
-        if (sampleList.size() == 0){
+        IApplicationServerApi apiConnection = obisSession.api;
+        SampleSearchCriteria criteria = new SampleSearchCriteria();
+        criteria.withCode().thatEquals(patientID);
+
+        SampleFetchOptions fetchOptions = new SampleFetchOptions();
+        fetchOptions.withChildren().withProperties();
+        fetchOptions.withProperties();
+        fetchOptions.withChildren().withType();
+        fetchOptions.withType();
+
+        SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
+        List<Sample> childrenList = result.getObjects().get(0).getChildren();
+
+        if (childrenList.size() == 0){
             log.error(String.format("Sample list was empty, patient ID %s seems to have no parents or childrens", patientID));
             return "";
         }
 
-        List<Sample> biologicalSamplesOnly = sampleList.stream().filter(sample -> sample.getSampleTypeCode()
+        List<Sample> biologicalSamplesOnly = childrenList.stream().filter(sample -> sample.getType().getCode()
                 .equals("Q_BIOLOGICAL_SAMPLE"))
                 .collect(Collectors.toList())
-                .stream().filter(sample -> sample.getPropertiesJson().containsValue(filterProperty)).collect(Collectors.toList());
+                .stream().filter(sample -> sample.getProperties().containsValue(filterProperty)).collect(Collectors.toList());
 
         int size = biologicalSamplesOnly.size();
 
@@ -183,8 +224,17 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
     }
 
     @Override
-    public Collection<String> getRegisteredPatients() {
-        return openBisClient.getSamplesOfProjectBySearchService(PROJECTID).stream().filter(sample -> sample.getSampleTypeCode()
+    public List<String> getRegisteredPatients() {
+        IApplicationServerApi apiConnection = obisSession.api;
+        SampleSearchCriteria criteria = new SampleSearchCriteria();
+        criteria.withCode().thatContains(CODE);
+
+        SampleFetchOptions fetchOptions = new SampleFetchOptions();
+        fetchOptions.withType();
+
+        SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
+
+        return result.getObjects().stream().filter(sample -> sample.getType().getCode()
                 .equals("Q_BIOLOGICAL_ENTITY"))
                 .map(Sample::getCode)
                 .collect(Collectors.toList());
@@ -330,7 +380,7 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
         List<Sample> filteredList = new ArrayList<>();
 
         for(Sample s : sampleList){
-            if (s.getSampleTypeCode().equals("Q_BIOLOGICAL_ENTITY")){
+            if (s.getType().getCode().equals("Q_BIOLOGICAL_ENTITY")){
                 filteredList.add(s);
             }
         }

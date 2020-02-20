@@ -51,26 +51,6 @@ public class BarcodeFunctions {
     }
 
     /**
-     * Returns a String denoting the range of a list of barcodes as used in QBiC
-     *
-     * @param ids List of code strings
-     * @return String denoting a range of the barcodes
-     */
-    public static String getBarcodeRange(List<String> ids) {
-        String head = OpenBisFunctions.getProjectPrefix(ids.get(0));
-        String min = ids.get(0).substring(5, 8);
-        String max = min;
-        for (String id : ids) {
-            String num = id.substring(5, 8);
-            if (num.compareTo(min) < 0)
-                min = num;
-            if (num.compareTo(max) > 0)
-                max = num;
-        }
-        return head + min + "-" + max;
-    }
-
-    /**
      * Checks if a String fits the QBiC barcode pattern
      *
      * @param code A String that may be a barcode
