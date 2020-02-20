@@ -133,8 +133,14 @@ public class BarcodeRequestPresenter {
         @Override
         public void run() {
 
-            String patientID =
-                    barcodeRequestView.getPatientIdInputField().getValue().toString().trim();
+            String patientID;
+
+            if (barcodeRequestView.getPatientIdInputField().getValue() == null) {
+                patientID =  "";
+            } else {
+                patientID =  barcodeRequestView.getPatientIdInputField().getValue().toString().trim();
+            }
+
             log.debug("Selection: " + patientID);
 
 
@@ -142,7 +148,7 @@ public class BarcodeRequestPresenter {
                 loadingLabel.setValue("Check if patient ID is valid ..."));
 
 
-            if (barcodeRequestView.getPatientIdField().getValue().isEmpty() ||
+            if (barcodeRequestView.getPatientIdInputField().getValue() == null ||
                     patientID.contains(" ")){
                 UI.getCurrent().access(() -> Utils.Notification("Wrong/missing patient ID",
                         "Please enter a valid patient ID (like Q****ENTITY-1", "error"));
