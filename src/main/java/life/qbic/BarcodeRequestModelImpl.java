@@ -180,7 +180,10 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
         criteria.withCode().thatEquals(patientID);
 
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
+        fetchOptions.withChildren().withProperties();
+        fetchOptions.withProperties();
         fetchOptions.withChildren().withType();
+        fetchOptions.withType();
 
         SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
         List<Sample> childrenList = result.getObjects().get(0).getChildren();
