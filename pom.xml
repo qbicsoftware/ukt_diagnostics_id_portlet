@@ -150,9 +150,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>life.qbic.openbis</groupId>
-			<artifactId>liferayandvaadinhelpers</artifactId>
-			<version>1.1.2</version>
+			<groupId>life.qbic</groupId>
+			<artifactId>portal-utils-lib</artifactId>
+			<version>1.7.2</version>
 		</dependency>
 
 		<dependency>

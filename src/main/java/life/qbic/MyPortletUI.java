@@ -18,9 +18,8 @@ import com.vaadin.ui.Notification;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.portal.liferayandvaadinhelpers.main.ConfigurationManager;
-import life.qbic.portal.liferayandvaadinhelpers.main.ConfigurationManagerFactory;
-import life.qbic.portal.liferayandvaadinhelpers.main.LiferayAndVaadinUtils;
+import life.qbic.portal.utils.ConfigurationManager;
+import life.qbic.portal.utils.ConfigurationManagerFactory;
 
 import java.io.BufferedReader;
 import java.nio.file.Files;
@@ -119,7 +118,7 @@ public class MyPortletUI extends UI {
             final ConfigurationManager config = ConfigurationManagerFactory.getInstance();
             credentials[0] = config.getDataSourceUser();
             credentials[1] = config.getDataSourcePassword();
-            credentials[2] = config.getDataSourceUrl();
+            credentials[2] = config.getDataSourceApiUrl();
         }
 
         return credentials;
