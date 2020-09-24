@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>life.qbic</groupId>
 		<artifactId>portlet-parent-pom</artifactId>
-		<version>3.0.0</version>
+		<version>3.1.0</version>
 	</parent>
 	<artifactId>ukt-diagnostics</artifactId>
 	<version>1.2.3</version>
@@ -19,7 +19,7 @@
 		<vaadin.plugin.version>7.7.8</vaadin.plugin.version>
 		<liferay.version>6.2.5</liferay.version>
 		<liferay.maven.plugin.version>6.2.5</liferay.maven.plugin.version>
-		<jetty.plugin.version>9.3.9.v20160517</jetty.plugin.version>
+		<jetty.plugin.version>9.4.31.v20200723</jetty.plugin.version>
 	</properties>
 	<repositories>
 		<repository>
@@ -51,18 +51,6 @@
 	</pluginRepositories>
 
 	<packaging>war</packaging>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>com.vaadin</groupId>
-				<artifactId>vaadin-bom</artifactId>
-				<version>${vaadin.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<dependencies>
 
@@ -146,7 +134,7 @@
 		<dependency>
 			<groupId>life.qbic</groupId>
 			<artifactId>openbis-client-lib</artifactId>
-			<version>1.4.0-SNAPSHOT</version>
+			<version>1.4.0</version>
 		</dependency>
 
 		<dependency>
@@ -158,7 +146,6 @@
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
-			<version>5.1.6</version>
 		</dependency>
 	</dependencies>
 
