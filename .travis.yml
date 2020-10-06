@@ -10,6 +10,8 @@ branches:
   only:
   - master
   - development
+  - /^release\/.*$/
+  - /^hotfix\/.*$/
   - /^[vV]?\d+\.\d+\.\d+$/ # matches e.g., v1.2.3, 1.2.3, V1.2.3
 install:
 - "$HOME/miniconda3/bin/conda --version || ./.install-reports-dependencies.sh"
