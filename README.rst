@@ -30,7 +30,6 @@ ukt-diagnostics. A qube based .
 Features
 --------
 
-* TODO
 
 Credits
 -------
