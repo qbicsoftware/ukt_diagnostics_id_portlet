@@ -1,4 +1,4 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.barcode;
 
 import com.vaadin.ui.*;
 

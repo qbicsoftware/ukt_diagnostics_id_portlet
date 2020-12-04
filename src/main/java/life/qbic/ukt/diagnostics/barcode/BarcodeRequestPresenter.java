@@ -1,4 +1,4 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.barcode;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -6,7 +6,9 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.ProgressBar;
 import com.vaadin.ui.UI;
-import life.qbic.helpers.Utils;
+import life.qbic.ukt.diagnostics.AppInfo;
+import life.qbic.ukt.diagnostics.helpers.Utils;
+import life.qbic.ukt.diagnostics.MyPortletUI;
 
 public class BarcodeRequestPresenter {
     private static Log log = LogFactoryUtil.getLog(MyPortletUI.class);

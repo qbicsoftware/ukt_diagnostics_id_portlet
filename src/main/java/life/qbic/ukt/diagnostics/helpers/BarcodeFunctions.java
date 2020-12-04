@@ -15,10 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package life.qbic.helpers;
+package life.qbic.ukt.diagnostics.helpers;
 
-
-import java.util.List;
 
 /**
  * Helper functions used for sample creation

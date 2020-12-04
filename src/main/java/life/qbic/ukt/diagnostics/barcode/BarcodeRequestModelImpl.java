@@ -1,4 +1,4 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.barcode;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
@@ -7,14 +7,17 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchO
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import life.qbic.helpers.BarcodeFunctions;
-import life.qbic.helpers.Utils;
+import life.qbic.ukt.diagnostics.AppInfo;
+import life.qbic.ukt.diagnostics.helpers.OpenBisSession;
+import life.qbic.ukt.diagnostics.helpers.BarcodeFunctions;
+import life.qbic.ukt.diagnostics.helpers.Utils;
 import life.qbic.openbis.openbisclient.OpenBisClient;
+import life.qbic.ukt.diagnostics.MyPortletUI;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static life.qbic.helpers.BarcodeFunctions.checksum;
+import static life.qbic.ukt.diagnostics.helpers.BarcodeFunctions.checksum;
 
 public class BarcodeRequestModelImpl implements BarcodeRequestModel{
 

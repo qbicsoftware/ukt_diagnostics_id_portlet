@@ -1,14 +1,12 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics;
 
 import javax.portlet.PortletContext;
 import javax.portlet.PortletSession;
 
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.service.UserLocalServiceUtil;
 import com.vaadin.annotations.Theme;
-import com.vaadin.annotations.Widgetset;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.WrappedPortletSession;
@@ -21,6 +19,8 @@ import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
 import life.qbic.portal.utils.PortalUtils;
+import life.qbic.ukt.diagnostics.barcode.*;
+import life.qbic.ukt.diagnostics.helpers.OpenBisSession;
 
 import java.io.BufferedReader;
 import java.nio.file.Files;

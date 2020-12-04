@@ -1,4 +1,4 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.barcode;
 
 import java.util.Collection;
 import java.util.List;

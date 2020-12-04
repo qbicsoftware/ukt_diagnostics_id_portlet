@@ -1,4 +1,4 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.helpers;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.systemsx.cisd.common.spring.HttpInvokerUtils;

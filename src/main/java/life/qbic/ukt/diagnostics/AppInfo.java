@@ -1,4 +1,4 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics;
 
 public class AppInfo {
 

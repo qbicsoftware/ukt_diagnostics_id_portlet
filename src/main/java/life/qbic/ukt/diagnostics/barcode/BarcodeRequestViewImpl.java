@@ -1,10 +1,11 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.barcode;
 
 import com.vaadin.client.ui.Icon;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Sizeable;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.*;
+import life.qbic.ukt.diagnostics.AppInfo;
 
 /**
  * View that will display different barcode request cases for
