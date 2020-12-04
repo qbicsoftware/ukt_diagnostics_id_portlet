@@ -1,20 +1,33 @@
 package life.qbic.ukt.diagnostics.barcode;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.id.CreationId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.id.EntityTypePermId;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.id.ExperimentIdentifier;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.id.ProjectIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.SampleCreation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SampleIdentifier;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SamplePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
+
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import life.qbic.ukt.diagnostics.AppInfo;
-import life.qbic.ukt.diagnostics.helpers.OpenBisSession;
-import life.qbic.ukt.diagnostics.helpers.BarcodeFunctions;
-import life.qbic.ukt.diagnostics.helpers.Utils;
-import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.ukt.diagnostics.MyPortletUI;
 
-import java.util.*;
+import life.qbic.openbis.openbisclient.OpenBisClient;
+import life.qbic.ukt.diagnostics.AppInfo;
+import life.qbic.ukt.diagnostics.MyPortletUI;
+import life.qbic.ukt.diagnostics.helpers.BarcodeFunctions;
+import life.qbic.ukt.diagnostics.helpers.OpenBisSession;
+import life.qbic.ukt.diagnostics.helpers.Utils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static life.qbic.ukt.diagnostics.helpers.BarcodeFunctions.checksum;
@@ -31,7 +44,7 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
 
     private final static String CODE = "QUK17";
 
-    private static Log log = LogFactoryUtil.getLog(MyPortletUI.class);
+    private static final Log log = LogFactoryUtil.getLog(MyPortletUI.class);
 
     private static final char[] ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVW".toCharArray();
 
@@ -272,32 +285,38 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
      * @return True, if registration was successful, else false
      */
     private boolean registerTestSample(String testSampleCode, String parent) {
-        Map<String, Object> params = new HashMap<>();
-        Map<String, Object> map = new HashMap<>();
-        Map<String, Object> metadata = new HashMap<>();
-        List<String> parents = new ArrayList<>();
 
-        metadata.put("Q_SAMPLE_TYPE", "DNA");
-        parents.add(parent);
+        SampleCreation sample = new SampleCreation();
+        sample.setCode( testSampleCode );
+        sample.setCreationId( new CreationId(testSampleCode) );
+        sample.setTypeId( new EntityTypePermId("Q_TEST_SAMPLE") );
 
-        map.put("code", testSampleCode);
-        map.put("space", SPACE);
-        map.put("project", CODE);
-        map.put("experiment", CODE + "E3");
-        map.put("type", "Q_TEST_SAMPLE");
-        map.put("metadata", metadata);
-        map.put("parents", parents);
+        sample.setSpaceId( new SpacePermId(SPACE) );
+        sample.setProjectId( new ProjectIdentifier(PROJECTID) );
+        sample.setExperimentId( new ExperimentIdentifier(SPACE, CODE, CODE + "E3") );
 
-        params.put(testSampleCode, map);
+        sample.setProperty("Q_SAMPLE_TYPE", "DNA");
+        sample.setParentIds( Collections.singletonList(new SampleIdentifier(parent)) );
 
-        try{
-            openBisClient.ingest("DSS1", "register-sample-batch", params);
-        } catch (Exception exc){
-            log.error(exc);
-            return false;
-        }
+        List<SamplePermId> res = openBisClient.createSamples( Collections.singletonList(sample) );
 
-        return true;
+        return res != null && !res.isEmpty();
+
+
+        // Alternative creation that could be implemented in openbis-client-lib
+        /*
+        Map<String, String> properties = Map.of("Q_SAMPLE_TYPE", "DNA");
+        List<SampleIdentifier> parents = List.of(new SampleIdentifier(parent));
+
+         SamplePermId res2 = openBisClient.createSample(
+                testSampleCode,
+                "Q_TEST_SAMPLE",
+                SPACE,
+                CODE,
+                CODE + "E3",
+                properties,
+                parents);
+        */
     }
 
     /**
@@ -307,37 +326,44 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
      * @return True, if registration was successful, else false
      */
     private boolean registerBioSample(String biologicalSampleCode, String parent, String tissue) {
-        Map<String, Object> params = new HashMap<>();
-        Map<String, Object> map = new HashMap<>();
-        Map<String, Object> metadata = new HashMap<>();
-        List<String> parents = new ArrayList<>();
 
-        if (tissue.equals("blood")){
-            metadata.put("Q_PRIMARY_TISSUE", "PBMC");
-        } else {
-            metadata.put("Q_PRIMARY_TISSUE", "TUMOR_TISSUE_UNSPECIFIED");
-        }
-        metadata.put("Q_TISSUE_DETAILED", tissue);
-        parents.add(parent);
+        SampleCreation sample = new SampleCreation();
+        sample.setCode( biologicalSampleCode );
+        sample.setCreationId( new CreationId(biologicalSampleCode) );
+        sample.setTypeId( new EntityTypePermId("Q_BIOLOGICAL_SAMPLE") );
 
-        map.put("code", biologicalSampleCode);
-        map.put("space", SPACE);
-        map.put("project", CODE);
-        map.put("experiment", CODE + "E2");
-        map.put("type", "Q_BIOLOGICAL_SAMPLE");
-        map.put("metadata", metadata);
-        map.put("parents", parents);
+        sample.setSpaceId( new SpacePermId(SPACE) );
+        sample.setProjectId( new ProjectIdentifier(PROJECTID) );
+        sample.setExperimentId( new ExperimentIdentifier(SPACE, CODE, CODE + "E2") );
 
-        params.put(biologicalSampleCode, map);
+        sample.setProperty("Q_PRIMARY_TISSUE",
+                tissue.equals("blood") ? "PBMC" : "TUMOR_TISSUE_UNSPECIFIED");
 
-        try{
-            openBisClient.ingest("DSS1", "register-sample-batch", params);
-        } catch (Exception exc){
-            log.error(exc);
-            return false;
-        }
+        sample.setProperty("Q_TISSUE_DETAILED", tissue);
+        sample.setParentIds( Collections.singletonList(new SampleIdentifier(parent)) );
 
-        return true;
+        List<SamplePermId> res = openBisClient.createSamples( Collections.singletonList(sample) );
+
+        return res != null && !res.isEmpty();
+
+
+        // Alternative creation that could be implemented in openbis-client-lib
+        /*
+        Map<String, String> properties = Map.of(
+                "Q_PRIMARY_TISSUE", tissue.equals("blood") ? "PBMC" : "TUMOR_TISSUE_UNSPECIFIED",
+                "Q_TISSUE_DETAILED", tissue
+        );
+        List<SampleIdentifier> parents = List.of(new SampleIdentifier(parent));
+
+         SamplePermId res2 = openBisClient.createSample(
+                testSampleCode,
+                "Q_TEST_SAMPLE",
+                SPACE,
+                CODE,
+                CODE + "E2",
+                properties,
+                parents);
+        */
     }
 
     /**
@@ -345,31 +371,38 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
      * @param patientId A code for the sample type Q_BIOLOGICAL_ENTITY
      * @return True, if registration was successful, else false
      */
-    private boolean registerEntity(String patientId){
-        Map<String, Object> params = new HashMap<>();
-        Map<String, Object> map = new HashMap<>();
-        Map<String, Object> metadata = new HashMap<>();
+    private boolean registerEntity(String patientId) {
 
-        metadata.put("Q_NCBI_ORGANISM", "9606");
+        Map<String, String> properties = Map.of("Q_NCBI_ORGANISM", "9606");
 
-        map.put("code", patientId);
-        map.put("space", SPACE);
-        map.put("project", CODE);
-        map.put("experiment", CODE + "E1");
-        map.put("type", "Q_BIOLOGICAL_ENTITY");
-        map.put("metadata", metadata);
+        SamplePermId res = openBisClient.createSample(
+                patientId,
+                "Q_TEST_SAMPLE",
+                SPACE,
+                CODE,
+                CODE + "E1",
+                properties);
+
+        return res != null;
 
 
-        params.put(patientId, map);
+        // Alternative creation which is more verbose
+        /*
+        SampleCreation sample = new SampleCreation();
+        sample.setCode( patientId );
+        sample.setCreationId( new CreationId(patientId) );
+        sample.setTypeId( new EntityTypePermId("Q_BIOLOGICAL_ENTITY") );
 
-        try{
-            openBisClient.ingest("DSS1", "register-sample-batch", params);
-        } catch (Exception exc){
-            log.error(exc);
-            return false;
-        }
+        sample.setSpaceId( new SpacePermId(SPACE) );
+        sample.setProjectId( new ProjectIdentifier(PROJECTID) );
+        sample.setExperimentId( new ExperimentIdentifier(SPACE, CODE, CODE + "E1") );
 
-        return true;
+        sample.setProperty("Q_NCBI_ORGANISM", "9606");
+
+        List<SamplePermId> res = openBisClient.createSamples( Collections.singletonList(sample) );
+
+        return res != null && !res.isEmpty();
+        */
     }
 
 
