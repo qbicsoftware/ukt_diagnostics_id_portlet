@@ -35,7 +35,7 @@ import java.util.Properties;
                 "life.qbic.portal.config.openbis.OpenbisGeneralSettingsConfig"},
         property = {
                 "com.liferay.portlet.display-category=qbic",
-                "javax.portlet.name=ukt-diagnostics_1.3.0",
+                "javax.portlet.name=ukt-diagnostics_1.4.0",
                 "javax.portlet.display-name=QBiC UKT Diagnostics ID Portlet",
                 "javax.portlet.security-role-ref=power-user,user",
                 "javax.portlet.resource-bundle=content.Language",
