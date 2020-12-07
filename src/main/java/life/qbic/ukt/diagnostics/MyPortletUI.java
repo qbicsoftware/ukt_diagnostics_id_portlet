@@ -21,6 +21,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
@@ -49,7 +50,7 @@ public class MyPortletUI extends UI {
 
     public static final PortletInformation info = new PortletInformation();
 
-    private static Boolean testing = false;
+    private static final Boolean testing = !PortalUtils.isLiferayPortlet();
 
 
     /* ----------------------------------------------------------------- */
@@ -82,37 +83,66 @@ public class MyPortletUI extends UI {
         content.setMargin(false);
         setContent(content);
 
-        if (!PortalUtils.userLoggedIn(request)) {
-            content.addComponent(PortalUtils.errorLayout("<p>You have to be logged in to use the "+info.getPortletName()+".</p>", true));
-            content.addComponent( getPortletInfoFooter() );
-            return;
+        if (!testing) {
+            if (!PortalUtils.userLoggedIn(request)) {
+                content.addComponent(PortalUtils.errorLayout("<p>You have to be logged in to use the " + info.getPortletName() + ".</p>", true));
+                content.addComponent(getPortletInfoFooter());
+                return;
 
-        } else if (!getPortletConfiguration()) {
-            content.addComponent(PortalUtils.errorLayout("<p>Could not load configuration. " +
-                    "Please notify your systems administrator.</p>", true));
-            content.addComponent( getPortletInfoFooter() );
-            return;
+            } else if (!getPortletConfiguration()) {
+                content.addComponent(PortalUtils.errorLayout("<p>Could not load configuration. " +
+                        "Please notify your systems administrator.</p>", true));
+                content.addComponent(getPortletInfoFooter());
+                return;
+            }
+
+            try {
+                openbis = new OpenBisClient(
+                        openbis_config.openbisUser(),
+                        openbis_config.openbisPassword(),
+                        openbis_config.openbisHost());
+
+            } catch (Exception e) {
+                content.addComponent(PortalUtils.errorLayout("<p>Could not establish connection to openBIS. " +
+                        "Please notify your systems administrator.</p>", true));
+                content.addComponent(getPortletInfoFooter());
+                return;
+            }
+
+            final BarcodeRequestView requestView = new BarcodeRequestViewImpl();
+            final BarcodeRequestModel barcodeRequestModel = new BarcodeRequestModelImpl(openbis);
+            final BarcodeRequestPresenter barcodeRequestPresenter = new BarcodeRequestPresenter(requestView, barcodeRequestModel, PortalUtils.getNonNullScreenName());
+
+            content.addComponents(requestView.getFullView(), getPortletInfoFooter());
+            content.setComponentAlignment(footer, Alignment.MIDDLE_RIGHT);
+
+        } else {
+            try {
+                String[] creds = getLocalCredentials();
+
+                if (creds == null)
+                    throw new FileNotFoundException("Local credentials file not found.");
+
+                openbis = new OpenBisClient( creds[0], creds[1], creds[2]);
+
+                final BarcodeRequestView requestView = new BarcodeRequestViewImpl();
+                final BarcodeRequestModel barcodeRequestModel = new BarcodeRequestModelImpl(openbis);
+                final BarcodeRequestPresenter barcodeRequestPresenter = new BarcodeRequestPresenter(requestView, barcodeRequestModel, creds[0]);
+
+                content.addComponents(requestView.getFullView(), getPortletInfoFooter());
+                content.setComponentAlignment(footer, Alignment.MIDDLE_RIGHT);
+
+            } catch (FileNotFoundException fnfe) {
+                content.addComponent(PortalUtils.errorLayout("<p>"+fnfe.getMessage()+"</p>", true));
+                content.addComponent(getPortletInfoFooter());
+
+            } catch (Exception e) {
+                content.addComponent(PortalUtils.errorLayout(
+                        "<p>Could not establish connection to openBIS. " +
+                        "Please notify your systems administrator.</p>", true));
+                content.addComponent(getPortletInfoFooter());
+            }
         }
-
-        try {
-            openbis = new OpenBisClient(
-                    openbis_config.openbisUser(),
-                    openbis_config.openbisPassword(),
-                    openbis_config.openbisHost() );
-
-        } catch (Exception e) {
-            content.addComponent(PortalUtils.errorLayout("<p>Could not establish connection to openBIS. " +
-                    "Please notify your systems administrator.</p>", true));
-            content.addComponent( getPortletInfoFooter() );
-            return;
-        }
-
-        final BarcodeRequestView requestView = new BarcodeRequestViewImpl();
-        final BarcodeRequestModel barcodeRequestModel = new BarcodeRequestModelImpl(openbis);
-        final BarcodeRequestPresenter barcodeRequestPresenter = new BarcodeRequestPresenter(requestView, barcodeRequestModel, PortalUtils.getNonNullScreenName());
-
-        content.addComponents(requestView.getFullView(), getPortletInfoFooter());
-        content.setComponentAlignment(footer, Alignment.MIDDLE_RIGHT);
     }
 
     private Label getPortletInfoFooter() {
@@ -146,7 +176,7 @@ public class MyPortletUI extends UI {
     /* ----- Local testing helper -------------------------------------------------------------- */
     /* ----------------------------------------------------------------------------------------- */
     /**
-     * Acquire the openBIS settings from local properties file or from Liferay.
+     * Acquire the openBIS settings from local properties file.
      *
      * @return An array with the credentials
      *      String[0] = loginID
@@ -156,29 +186,19 @@ public class MyPortletUI extends UI {
     private String[] getLocalCredentials() {
         final String[] credentials = new String[3];
 
-        if (testing){
-            try{
-                final BufferedReader propertiesFile = Files.newBufferedReader(Paths.get("/etc/openbis.properties"));
-                final Properties prop = new Properties();
-                prop.load(propertiesFile);
-                credentials[0] = prop.getProperty("openbisuser");
-                credentials[1] = prop.getProperty("openbispw");
-                credentials[2] = prop.getProperty("openbisURI");
+        try {
+            final BufferedReader propertiesFile = Files.newBufferedReader(Paths.get("/etc/openbis.properties"));
+            final Properties prop = new Properties();
+            prop.load(propertiesFile);
+            credentials[0] = prop.getProperty("openbisuser");
+            credentials[1] = prop.getProperty("openbispw");
+            credentials[2] = prop.getProperty("openbisURI");
 
-            } catch (Exception exc){
-                log.error(exc);
-                return null;
-            }
-        } else {
-            try {
-                this.openbis_config = configProvider.getSystemConfiguration(OpenbisGeneralSettingsConfig.class);
-
-            } catch (ConfigurationException e) {
-                e.printStackTrace();
-            }
+        } catch (Exception exc){
+            log.error(exc);
+            return null;
         }
 
         return credentials;
-
     }
 }
