@@ -145,6 +145,11 @@
 		<!-- Vaadin dependencies -->
 		<dependency>
 			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-shared</artifactId>
+			<scope>${osgi.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.vaadin</groupId>
 			<artifactId>vaadin-server</artifactId>
 			<scope>${osgi.scope}</scope>
 		</dependency>
