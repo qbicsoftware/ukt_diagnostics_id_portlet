@@ -1,27 +1,21 @@
 package life.qbic.ukt.diagnostics.barcode;
 
-import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.id.CreationId;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.id.EntityTypePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.id.ExperimentIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.id.ProjectIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.SampleCreation;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SampleIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SamplePermId;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.ukt.diagnostics.AppInfo;
 import life.qbic.ukt.diagnostics.MyPortletUI;
 import life.qbic.ukt.diagnostics.helpers.BarcodeFunctions;
-import life.qbic.ukt.diagnostics.helpers.OpenBisSession;
 import life.qbic.ukt.diagnostics.helpers.Utils;
 
 import java.util.ArrayList;
@@ -33,8 +27,6 @@ import java.util.stream.Collectors;
 import static life.qbic.ukt.diagnostics.helpers.BarcodeFunctions.checksum;
 
 public class BarcodeRequestModelImpl implements BarcodeRequestModel{
-
-    private final OpenBisSession obisSession;
 
     private final OpenBisClient openBisClient;
 
@@ -50,9 +42,8 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
 
     private static String[] patientSampleIdPair= null;
 
-    public BarcodeRequestModelImpl(OpenBisSession session, OpenBisClient client){
 
-        this.obisSession = session;
+    public BarcodeRequestModelImpl(OpenBisClient client){
         this.openBisClient = client;
     }
 
@@ -76,37 +67,41 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
 
         // Logging code block
         log.debug(String.format("Number of non-entity samples: %s", sizes[0]));
-        log.info(String.format("%s: New patient ID created %s", AppInfo.getAppInfo(), patientSampleIdPair[0]));
-        log.info(String.format("%s: New tumor sample ID created %s", AppInfo.getAppInfo(), patientSampleIdPair[1]));
-        log.info(String.format("%s: New tumor DNA sample ID created %s", AppInfo.getAppInfo(), biologicalSampleCodeTumor));
-        log.info(String.format("%s: New blood sample ID created %s", AppInfo.getAppInfo(), biologicalSampleCodeBlood));
-        log.info(String.format("%s: New blood DNA sample ID created %s", AppInfo.getAppInfo(), testSampleCodeBlood));
+        log.info(String.format("%s: New patient ID created %s", MyPortletUI.info.getPortletInfo(), patientSampleIdPair[0]));
+        log.info(String.format("%s: New tumor sample ID created %s", MyPortletUI.info.getPortletInfo(), patientSampleIdPair[1]));
+        log.info(String.format("%s: New tumor DNA sample ID created %s", MyPortletUI.info.getPortletInfo(), biologicalSampleCodeTumor));
+        log.info(String.format("%s: New blood sample ID created %s", MyPortletUI.info.getPortletInfo(), biologicalSampleCodeBlood));
+        log.info(String.format("%s: New blood DNA sample ID created %s", MyPortletUI.info.getPortletInfo(), testSampleCodeBlood));
 
         // In case registration fails, return null
         
         if(!registerNewPatient(patientId, biologicalSampleCodeTumor,
                 biologicalSampleCodeBlood, testSampleCodeTumor, testSampleCodeBlood))
             patientSampleIdPair = null;
-        
     }
 
 
     /**
-     * Determines the number of non entity samples and
-     * total samples for a project
+     * Determines the number of non entity samples and total samples for a project.
+     *
      * @return An 1D array with 2 entries:
      *          array[0] = number of non entities
      *          array[1] = number of total entities
      */
     private int[] getNumberOfSampleTypes(){
         int[] sizes = new int[2];
-        List<Sample> sampleList = this.getSamplesOfProject(CODE);
+        // List<Sample> sampleList = this.getSamplesOfProject(CODE);
+        List<Sample> sampleList = this.getSamplesOfProject(PROJECTID);
         List<Sample> entities = getEntities(sampleList);
 
         String highestID = null;
+
+        if (sampleList.isEmpty())
+            return sizes;
+
         // Filter sample list for Q_BIOLOGICAL_SAMPLE and Q_TEST_SAMPLE
-        for(Sample s : sampleList){
-            if (s.getType().getCode().equals("Q_BIOLOGICAL_SAMPLE") || s.getType().getCode().equals("Q_TEST_SAMPLE")){
+        for(Sample s : sampleList) {
+            if (s.getType().getCode().equals("Q_BIOLOGICAL_SAMPLE") || s.getType().getCode().equals("Q_TEST_SAMPLE")) {
                 String idCount = s.getCode().substring(5, 9);
                 if (highestID == null){
                     highestID = idCount;
@@ -123,16 +118,9 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
     }
 
     private List<Sample> getSamplesOfProject(String id) {
-        IApplicationServerApi apiConnection = obisSession.api;
-        SampleSearchCriteria criteria = new SampleSearchCriteria();
-        criteria.withCode().thatContains(id);
+        List<Sample> result = openBisClient.getSamplesOfProject( id );
 
-        SampleFetchOptions fetchOptions = new SampleFetchOptions();
-        fetchOptions.withType();
-
-        SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
-        log.info("Found "+ result.getObjects().size() + " samples for project " + id + ".");
-        return result.getObjects();
+        return result == null ? new ArrayList<>() : result;
     }
 
     private boolean isIdHigher(String idA, String idB){
@@ -170,88 +158,61 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
 
     @Override
     public boolean checkIfPatientExists(String sampleID) {
-        Sample sample;
-        try{
-            IApplicationServerApi apiConnection = obisSession.api;
-            SampleSearchCriteria criteria = new SampleSearchCriteria();
-            criteria.withCode().thatEquals(sampleID);
 
-            SampleFetchOptions fetchOptions = new SampleFetchOptions();
-            fetchOptions.withType();
-
-            SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
-            sample = result.getObjects().get(0);
-        } catch (Exception exc){
-            log.error(exc);
-            return false;
-        }
-        return sample != null;
+        return openBisClient.getSampleByCode( sampleID ) != null;
     }
 
     @Override
     public String addNewSampleToPatient(String patientID, String filterProperty) {
 
-        IApplicationServerApi apiConnection = obisSession.api;
-        SampleSearchCriteria criteria = new SampleSearchCriteria();
-        criteria.withCode().thatEquals(patientID);
+        Sample res = openBisClient.getSampleWithParentsAndChildren(patientID);
 
-        SampleFetchOptions fetchOptions = new SampleFetchOptions();
-        fetchOptions.withChildren().withProperties();
-        fetchOptions.withProperties();
-        fetchOptions.withChildren().withType();
-        fetchOptions.withType();
-
-        SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
-        List<Sample> childrenList = result.getObjects().get(0).getChildren();
-
-        if (childrenList.size() == 0){
-            log.error(String.format("Sample list was empty, patient ID %s seems to have no parents or childrens", patientID));
+        if (res == null) {
+            log.error("Could not find patient with ID: " + patientID);
             return "";
         }
 
-        List<Sample> biologicalSamplesOnly = childrenList.stream().filter(sample -> sample.getType().getCode()
-                .equals("Q_BIOLOGICAL_SAMPLE"))
-                .collect(Collectors.toList())
-                .stream().filter(sample -> sample.getProperties().containsValue(filterProperty)).collect(Collectors.toList());
+        List<Sample> children = res.getChildren();
 
-        int size = biologicalSamplesOnly.size();
+        if (children == null || children.isEmpty()) {
+            log.error(String.format("Sample list was empty, patient ID %s seems to have no parents or children", patientID));
+            return "";
+        }
 
-        if (size == 0){
+        List<Sample> bioSamples = children.stream()
+                .filter(sample -> sample.getType().getCode().equals("Q_BIOLOGICAL_SAMPLE"))
+                .filter(sample -> sample.getProperties().containsValue(filterProperty))
+                .collect(Collectors.toList());
+
+        if (bioSamples.isEmpty()){
             log.error(String.format("No samples of type 'Q_BIOLOGICAL_SAMPLE' found for patient ID %s.", patientID));
             return "";
-        } else if (size > 1){
+        } else if (bioSamples.size() > 1){
             log.error(String.format("More than 1 sample of type 'Q_BIOLOGICAL_SAMPLE' found for patient ID %s.", patientID));
             return "";
         }
 
-        int i = getNumberOfSampleTypes()[0];
-
         String sampleBarcode = createBarcodeFromInteger(getNumberOfSampleTypes()[0] + 2);
 
         if (sampleBarcode.isEmpty()){
-            log.error("Retrieval of a new sample barcode failed. No new sample for an existing patient " +
-                    "was created.");
+            log.error("Retrieval of a new sample barcode failed. " +
+                    "No new sample for an existing patient was created.");
             return "";
         }
 
-        boolean sampleRegistrationWasSuccessfull = registerTestSample(sampleBarcode, biologicalSamplesOnly.get(0).getCode());
-
-        return sampleRegistrationWasSuccessfull ? sampleBarcode : "";
+        return registerTestSample(sampleBarcode, bioSamples.get(0).getCode()) ? sampleBarcode : "";
     }
 
     @Override
     public List<String> getRegisteredPatients() {
-        IApplicationServerApi apiConnection = obisSession.api;
-        SampleSearchCriteria criteria = new SampleSearchCriteria();
-        criteria.withCode().thatContains(CODE);
 
-        SampleFetchOptions fetchOptions = new SampleFetchOptions();
-        fetchOptions.withType();
+        List<Sample> res = openBisClient.getSamplesOfProject(PROJECTID);
 
-        SearchResult<Sample> result = apiConnection.searchSamples(obisSession.token, criteria, fetchOptions);
-
-        return result.getObjects().stream().filter(sample -> sample.getType().getCode()
-                .equals("Q_BIOLOGICAL_ENTITY"))
+        if (res == null)
+            return new ArrayList<>();
+        else
+            return res.stream()
+                .filter(sample -> sample.getType().getCode().equals("Q_BIOLOGICAL_ENTITY"))
                 .map(Sample::getCode)
                 .collect(Collectors.toList());
     }
@@ -267,15 +228,11 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
      */
     private boolean registerNewPatient(String patientId, String biologicalSampleCodeTumor, String biologicalSampleCodeBlood,
                                        String testSampleCodeTumor, String testSampleCodeBlood) {
-        if (registerEntity(patientId) &&
-                registerBioSample(biologicalSampleCodeTumor, "/"+SPACE+"/"+patientId, "tumor tissue") &&
-                registerTestSample(testSampleCodeTumor, "/"+SPACE+"/"+biologicalSampleCodeTumor) &&
-                registerBioSample(biologicalSampleCodeBlood, "/"+SPACE+"/"+patientId, "blood") &&
-                registerTestSample(testSampleCodeBlood, "/"+SPACE+"/"+biologicalSampleCodeBlood)){
-            return true;
-        }
-
-        return false;
+        return registerEntity(patientId) &&
+               registerBioSample(biologicalSampleCodeTumor, PROJECTID + "/" + patientId, "tumor tissue") &&
+               registerTestSample(testSampleCodeTumor, PROJECTID + "/" + biologicalSampleCodeTumor) &&
+               registerBioSample(biologicalSampleCodeBlood, PROJECTID + "/" + patientId, "blood") &&
+               registerTestSample(testSampleCodeBlood, PROJECTID + "/" + biologicalSampleCodeBlood);
     }
 
     /**
@@ -377,7 +334,7 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
 
         SamplePermId res = openBisClient.createSample(
                 patientId,
-                "Q_TEST_SAMPLE",
+                "Q_BIOLOGICAL_ENTITY",
                 SPACE,
                 CODE,
                 CODE + "E1",
@@ -447,8 +404,8 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
         String barcode = preBarcode + checksum(preBarcode);
 
         if (!BarcodeFunctions.isQbicBarcode(barcode)){
-            log.error(String.format("%s: Barcode created from Integer is not a valid barcode: %s", AppInfo.getAppInfo(),
-                    barcode));
+            log.error(String.format("%s: Barcode created from Integer is not a valid barcode: %s",
+                    MyPortletUI.info.getPortletInfo(), barcode));
             barcode = "";
         }
 

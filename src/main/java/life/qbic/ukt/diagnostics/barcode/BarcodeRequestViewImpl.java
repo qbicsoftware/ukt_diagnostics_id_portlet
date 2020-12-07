@@ -6,8 +6,6 @@ import com.vaadin.server.Sizeable;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.*;
 
-import life.qbic.ukt.diagnostics.AppInfo;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -113,7 +111,6 @@ public class BarcodeRequestViewImpl implements BarcodeRequestView {
 
         // Compose new sample request layout form
         fullView.addComponents(taskSelection, taskCreatePatientContainer, taskCreateSampleContainer, spinnerContainer);
-        fullView.addComponent(new Label("Version " + AppInfo.VERSION));
         fullView.setSpacing(true);
 
         // we want a spinner not a progress bar
