@@ -200,7 +200,7 @@ public class BarcodeRequestModelImpl implements BarcodeRequestModel{
             return "";
         }
 
-        return registerTestSample(sampleBarcode, bioSamples.get(0).getCode()) ? sampleBarcode : "";
+        return registerTestSample(sampleBarcode, bioSamples.get(0).getIdentifier().toString()) ? sampleBarcode : "";
     }
 
     @Override
