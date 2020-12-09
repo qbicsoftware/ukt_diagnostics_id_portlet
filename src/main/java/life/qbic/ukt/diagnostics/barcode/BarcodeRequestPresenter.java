@@ -1,4 +1,4 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.barcode;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -6,10 +6,13 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.ProgressBar;
 import com.vaadin.ui.UI;
-import life.qbic.helpers.Utils;
+
+import life.qbic.ukt.diagnostics.MyPortletUI;
+import life.qbic.ukt.diagnostics.helpers.Utils;
+
 
 public class BarcodeRequestPresenter {
-    private static Log log = LogFactoryUtil.getLog(MyPortletUI.class);
+    private static final Log log = LogFactoryUtil.getLog(MyPortletUI.class);
 
     private BarcodeRequestView barcodeRequestView;
 
@@ -19,22 +22,33 @@ public class BarcodeRequestPresenter {
 
     private String user;
 
-    public BarcodeRequestPresenter(BarcodeRequestView barcodeRequestView, BarcodeRequestModel barcodeRequestModel, String user) {
+    private UI ui;
+
+
+    /* ----------------------------------------------------------------------------------------- */
+    /* ----- Constructor ----------------------------------------------------------------------- */
+    /* ----------------------------------------------------------------------------------------- */
+    public BarcodeRequestPresenter(BarcodeRequestView barcodeRequestView,
+                                   BarcodeRequestModel barcodeRequestModel,
+                                   String user) {
         this.barcodeRequestView = barcodeRequestView;
         this.barcodeRequestModel = barcodeRequestModel;
         this.user = user;
+
         giveLifeToElements();
     }
 
     private void giveLifeToElements() {
 
-        barcodeRequestView.getPatientIdInputField().setInputPrompt("Choose patient");
+        barcodeRequestView.getPatientIdInputField().setPlaceholder("Choose patient");
 
-        barcodeRequestView.getPatientIdInputField().addItems(barcodeRequestModel.getRegisteredPatients());
-
+        // barcodeRequestView.getPatientIdInputField().setItems(barcodeRequestModel.getRegisteredPatients());
+        barcodeRequestView.getPatientIdDataProvider().getItems().clear();
+        barcodeRequestView.getPatientIdDataProvider().getItems().addAll(barcodeRequestModel.getRegisteredPatients());
+        barcodeRequestView.getPatientIdDataProvider().refreshAll();
 
         barcodeRequestView.getTaskSelectionGroup().addValueChangeListener(value -> {
-            if(barcodeRequestView.getTaskSelectionGroup().getValue().toString().contains("patient/sample")) {
+            if(barcodeRequestView.getTaskSelectionGroup().getValue().contains("patient/sample")) {
                 barcodeRequestView.getCreatePatientContainer().setVisible(true);
                 barcodeRequestView.getCreateSampleContainer().setVisible(false);
             } else{
@@ -44,26 +58,38 @@ public class BarcodeRequestPresenter {
         });
 
         barcodeRequestView.getPatentIdSampleIdButton().addClickListener(clickEvent -> {
-            log.info(String.format("%s: Patient/Sample ID pair requested by user %s", AppInfo.getAppInfo(), this.user));
+            log.info(String.format("%s: Patient/Sample ID pair requested by user %s",
+                    MyPortletUI.info.getPortletInfo(), this.user));
+
             barcodeRequestView.getPatentIdSampleIdButton().setEnabled(false);
             barcodeRequestView.getTaskSelectionGroup().setEnabled(false);
+
+            ui = UI.getCurrent();
+
             Thread request = new RequestThread();
             request.start();
             UI.getCurrent().setPollInterval(50);
         });
 
-
         barcodeRequestView.getCreateSampleButton().addClickListener(clickEvent -> {
-            log.info(String.format("%s: Additional DNA sample requested by user %s", AppInfo.getAppInfo(), this.user));
+            log.info(String.format("%s: Additional DNA sample requested by user %s",
+                    MyPortletUI.info.getPortletInfo(), this.user));
+
             barcodeRequestView.getCreateSampleButton().setEnabled(false);
             barcodeRequestView.getTaskSelectionGroup().setEnabled(false);
+
+            ui = UI.getCurrent();
+
             Thread request = new NewSampleRequestThread();
             request.start();
             UI.getCurrent().setPollInterval(50);
         });
-
     }
 
+
+    /* ----------------------------------------------------------------------------------------- */
+    /* ----- Backkground Threads --------------------------------------------------------------- */
+    /* ----------------------------------------------------------------------------------------- */
     /**
      * An own thread for the heavy task of the barcode request and
      * sample registration
@@ -83,14 +109,13 @@ public class BarcodeRequestPresenter {
 
         @Override
         public void run() {
-
+            UI.setCurrent(ui);
 
             // Thread-safe UI access
             UI.getCurrent().access(() -> {
                 container.setVisible(true);
                 loadingLabel.setValue("Patient and Sample IDs are requested ...");
             });
-
 
             barcodeRequestModel.requestNewPatientSampleIdPair();
 
@@ -102,7 +127,10 @@ public class BarcodeRequestPresenter {
             } else {
                 barcodeRequestView.getPatientIdField().setValue(patientSampleIdPair[0]);
                 barcodeRequestView.getSampleIdField().setValue(patientSampleIdPair[1]);
-                barcodeRequestView.getPatientIdInputField().addItem(patientSampleIdPair[0]);
+                // barcodeRequestView.getPatientIdInputField().addItem(patientSampleIdPair[0]);
+
+                barcodeRequestView.getPatientIdDataProvider().getItems().add(patientSampleIdPair[0]);
+                barcodeRequestView.getPatientIdDataProvider().refreshAll();
             }
 
             UI.getCurrent().access(() -> {
@@ -116,7 +144,6 @@ public class BarcodeRequestPresenter {
 
         }
     }
-
 
     class NewSampleRequestThread extends Thread {
         ProgressBar bar;
@@ -132,13 +159,13 @@ public class BarcodeRequestPresenter {
 
         @Override
         public void run() {
-
             String patientID;
+            UI.setCurrent(ui);
 
             if (barcodeRequestView.getPatientIdInputField().getValue() == null) {
                 patientID =  "";
             } else {
-                patientID =  barcodeRequestView.getPatientIdInputField().getValue().toString().trim();
+                patientID =  barcodeRequestView.getPatientIdInputField().getValue().trim();
             }
 
             log.debug("Selection: " + patientID);

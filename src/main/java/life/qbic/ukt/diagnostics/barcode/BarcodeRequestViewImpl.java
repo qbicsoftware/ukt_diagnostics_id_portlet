@@ -1,10 +1,14 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.barcode;
 
-import com.vaadin.client.ui.Icon;
-import com.vaadin.server.FontAwesome;
+import com.vaadin.data.provider.ListDataProvider;
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.Sizeable;
-import com.vaadin.shared.ui.label.ContentMode;
+import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * View that will display different barcode request cases for
@@ -20,7 +24,7 @@ import com.vaadin.ui.*;
  */
 public class BarcodeRequestViewImpl implements BarcodeRequestView {
 
-    private OptionGroup taskSelection;
+    private RadioButtonGroup<String> taskSelection;
 
     private VerticalLayout fullView;
 
@@ -46,7 +50,9 @@ public class BarcodeRequestViewImpl implements BarcodeRequestView {
 
     private VerticalLayout taskCreateSampleContainer;
 
-    private ComboBox patientIdInputField;
+    private List<String> patientIdList = new ArrayList<>();
+    private ListDataProvider<String> patientIdDataProvider = new ListDataProvider<>(patientIdList);
+    private ComboBox<String> patientIdInputField;
 
     private Label newSampleIdLabel;
 
@@ -61,9 +67,11 @@ public class BarcodeRequestViewImpl implements BarcodeRequestView {
     private void initView() {
         // Init components
         createTaskSelectionView();
-        patientIdInputField = new ComboBox();
+
+        patientIdInputField = new ComboBox<>();
         patientIdInputField.setWidth("100%");
-        patientIdInputField.setValue("Enter patient ID here");
+        patientIdInputField.setPlaceholder("Enter patient ID here");
+        patientIdInputField.setDataProvider(patientIdDataProvider);
         newSampleIdLabel = new Label("<i>ID will be displayed after request.</i>", ContentMode.HTML);
         newPatientIdPanel = new Panel("Patient ID");
         newSampleIdPanel = new Panel("Sample ID");
@@ -103,12 +111,10 @@ public class BarcodeRequestViewImpl implements BarcodeRequestView {
 
         // Compose new sample request layout form
         fullView.addComponents(taskSelection, taskCreatePatientContainer, taskCreateSampleContainer, spinnerContainer);
-        fullView.addComponent(new Label("Version " + AppInfo.VERSION));
         fullView.setSpacing(true);
 
         // we want a spinner not a progress bar
         spinner.setIndeterminate(true);
-        spinner.setImmediate(true);
         spinnerContainer.setVisible(false);
 
         patientIdField.setCaption("Patient ID");
@@ -125,20 +131,20 @@ public class BarcodeRequestViewImpl implements BarcodeRequestView {
         innerPatientIdLayout.addComponent(patientIdLabel);
         innerPatientIdLayout.setMargin(true);
         patientIdField.setContent(innerPatientIdLayout);
-        patientIdField.setIcon(FontAwesome.USER);
+        patientIdField.setIcon(VaadinIcons.USER);
 
 
         VerticalLayout innerSampleIdLayout = new VerticalLayout();
         innerSampleIdLayout.addComponent(sampleIdLabel);
         innerSampleIdLayout.setMargin(true);
         sampleIdPanel.setContent(innerSampleIdLayout);
-        sampleIdPanel.setIcon(FontAwesome.FILE_O);
+        sampleIdPanel.setIcon(VaadinIcons.FILE_O);
 
         VerticalLayout innerPatientIdLayoutTask2 = new VerticalLayout();
         innerPatientIdLayoutTask2.addComponent(patientIdInputField);
         innerPatientIdLayoutTask2.setMargin(true);
         newPatientIdPanel.setContent(innerPatientIdLayoutTask2);
-        newPatientIdPanel.setIcon(FontAwesome.USER);
+        newPatientIdPanel.setIcon(VaadinIcons.USER);
 
         VerticalLayout innerSampleIdLayoutTask2 = new VerticalLayout();
         innerSampleIdLayoutTask2.addComponent(newSampleIdLabel);
@@ -147,15 +153,15 @@ public class BarcodeRequestViewImpl implements BarcodeRequestView {
         innerPatientIdLayoutTask2.setHeight(100, Sizeable.Unit.PERCENTAGE);
         newSampleIdPanel.setContent(innerSampleIdLayoutTask2);
         newSampleIdPanel.setHeight(100, Sizeable.Unit.PERCENTAGE);
-        newSampleIdPanel.setIcon(FontAwesome.FILE_O);
+        newSampleIdPanel.setIcon(VaadinIcons.FILE_O);
 
 
 
     }
 
     private void createTaskSelectionView() {
-        taskSelection = new OptionGroup("Choose what you want to do");
-        taskSelection.addItems("Request new patient/sample ID pair (Creates new patient ID!)",
+        taskSelection = new RadioButtonGroup("Choose what you want to do");
+        taskSelection.setItems("Request new patient/sample ID pair (Creates new patient ID!)",
                 "Create new DNA sample for an existing patient");
     }
 
@@ -170,7 +176,7 @@ public class BarcodeRequestViewImpl implements BarcodeRequestView {
     }
 
     @Override
-    public OptionGroup getTaskSelectionGroup() {
+    public RadioButtonGroup<String> getTaskSelectionGroup() {
         return this.taskSelection;
     }
 
@@ -215,8 +221,13 @@ public class BarcodeRequestViewImpl implements BarcodeRequestView {
     }
 
     @Override
-    public ComboBox getPatientIdInputField() {
+    public ComboBox<String> getPatientIdInputField() {
         return this.patientIdInputField;
+    }
+
+    @Override
+    public ListDataProvider<String> getPatientIdDataProvider() {
+        return this.patientIdDataProvider;
     }
 
     @Override

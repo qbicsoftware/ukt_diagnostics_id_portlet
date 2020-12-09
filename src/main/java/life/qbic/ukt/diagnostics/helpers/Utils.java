@@ -13,52 +13,25 @@
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package life.qbic.helpers;
+package life.qbic.ukt.diagnostics.helpers;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.portal.service.CompanyLocalServiceUtil;
-import com.liferay.portal.service.UserLocalServiceUtil;
-import com.vaadin.data.Container;
-import com.vaadin.data.Item;
-import com.vaadin.data.Property;
-import com.vaadin.data.util.BeanItemContainer;
-import com.vaadin.server.FontAwesome;
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.Page;
 import com.vaadin.server.StreamResource;
 import com.vaadin.shared.Position;
-import com.vaadin.shared.ui.label.ContentMode;
-import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Panel;
-import com.vaadin.ui.PopupView;
-import com.vaadin.ui.PopupView.Content;
-import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 
 public class Utils {
 
@@ -84,7 +57,7 @@ public class Utils {
      * @return list of integer representations of the input list
      */
     public static List<Integer> strArrToInt(List<String> strings) {
-        List<Integer> res = new ArrayList<Integer>();
+        List<Integer> res = new ArrayList<>();
         for (String s : strings) {
             res.add(Integer.parseInt(s));
         }
@@ -170,101 +143,7 @@ public class Utils {
         return resource;
     }
 
-    public static String containerToString(Container container) {
-        String header = "";
-        Collection<?> i = container.getItemIds();
-        String rowString = "";
 
-        Collection<?> propertyIDs = container.getContainerPropertyIds();
-
-        for (Object o : propertyIDs) {
-            header += o.toString() + "\t";
-        }
-
-        // for (int x = 1; x <= i.size(); x++) {
-        for (Object id : i) {
-            Item it = container.getItem(id);
-
-            for (Object o : propertyIDs) {
-                // Could be extended to an exclusion list if we don't want to show further columns
-                if (o.toString() == "dl_link") {
-                    continue;
-                } else if (o.toString() == "Status") {
-                    Image image = (Image) it.getItemProperty(o).getValue();
-                    rowString += image.getCaption() + "\t";
-                } else {
-                    Property prop = it.getItemProperty(o);
-                    rowString += prop.toString() + "\t";
-                }
-            }
-            rowString += "\n";
-        }
-        return header + "\n" + rowString;
-    }
-
-    // TODO fix and test
-    public static String containerToString(BeanItemContainer container) {
-        String header = "";
-        Collection<?> i = container.getItemIds();
-        String rowString = "";
-
-        List<String> exklusionList = new ArrayList<String>();
-        exklusionList.add("samples");
-        exklusionList.add("properties");
-        exklusionList.add("controlledVocabularies");
-        exklusionList.add("typeLabels");
-        exklusionList.add("containsData");
-        exklusionList.add("parents");
-        exklusionList.add("children");
-        exklusionList.add("datasets");
-        exklusionList.add("isSelected");
-        exklusionList.add("parent");
-        exklusionList.add("root");
-        exklusionList.add("children");
-        exklusionList.add("dssPath");
-
-        Collection<?> propertyIDs = container.getContainerPropertyIds();
-
-        for (Object o : propertyIDs) {
-            if (exklusionList.contains(o.toString())) {
-                continue;
-            } else {
-                header += o.toString() + "\t";
-            }
-        }
-
-        // for (int x = 1; x <= i.size(); x++) {
-        for (Object id : i) {
-            Item it = container.getItem(id);
-
-            for (Object o : propertyIDs) {
-                // Could be extended to an exclusion list if we don't want to show further columns
-                if (exklusionList.contains(o.toString())) {
-                    continue;
-                } // else if (o.toString().equals("status")) {
-                // Image image = (Image) it.getItemProperty(o).getValue();
-                // rowString += image.getCaption() + "\t";
-                // }
-                else {
-                    Property prop = it.getItemProperty(o);
-
-                    if (prop.getValue() == null) {
-                        rowString += "-" + "\t";
-                    } else {
-                        rowString += prop.toString() + "\t";
-                    }
-                }
-            }
-            rowString += "\n";
-        }
-        return header + "\n" + rowString;
-    }
-
-    public static void printMapContent(Map<String, Object> map) {
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
-        }
-    }
 
     public static String getTime() {
         Date dNow = new Date();
@@ -278,15 +157,15 @@ public class Utils {
         notify.setPosition(Position.TOP_CENTER);
         if (type.equals("error")) {
             notify.setDelayMsec(3000);
-            notify.setIcon(FontAwesome.FROWN_O);
+            notify.setIcon(VaadinIcons.FROWN_O);
             notify.setStyleName(ValoTheme.NOTIFICATION_ERROR + " " + ValoTheme.NOTIFICATION_CLOSABLE);
         } else if (type.equals("success")) {
             notify.setDelayMsec(3000);
-            notify.setIcon(FontAwesome.SMILE_O);
+            notify.setIcon(VaadinIcons.SMILEY_O);
             notify.setStyleName(ValoTheme.NOTIFICATION_SUCCESS + " " + ValoTheme.NOTIFICATION_CLOSABLE);
         } else {
             notify.setDelayMsec(3000);
-            notify.setIcon(FontAwesome.COMMENT);
+            notify.setIcon(VaadinIcons.COMMENT);
             notify.setStyleName(ValoTheme.NOTIFICATION_TRAY + " " + ValoTheme.NOTIFICATION_CLOSABLE);
         }
         notify.show(Page.getCurrent());
@@ -294,7 +173,7 @@ public class Utils {
 
     public static Panel createInfoBox(String caption, String description) {
         Panel panel = new Panel(caption);
-        panel.setIcon(FontAwesome.INFO);
+        panel.setIcon(VaadinIcons.INFO);
         panel.setStyleName(ValoTheme.PANEL_BORDERLESS);
         HorizontalLayout layout = new HorizontalLayout();
         Label label = new Label();

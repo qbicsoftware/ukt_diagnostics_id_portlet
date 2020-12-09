@@ -1,6 +1,8 @@
-package life.qbic;
+package life.qbic.ukt.diagnostics.barcode;
 
+import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.ui.*;
+
 
 public interface BarcodeRequestView {
 
@@ -21,7 +23,7 @@ public interface BarcodeRequestView {
      * Getter for the radio button group
      * @return text field
      */
-    OptionGroup getTaskSelectionGroup();
+    RadioButtonGroup<String> getTaskSelectionGroup();
 
 
     /**
@@ -78,9 +80,15 @@ public interface BarcodeRequestView {
 
     /**
      * Getter for the patient ID input field
-     * @return The text field
+     * @return The combo box
      */
-    ComboBox getPatientIdInputField();
+    ComboBox<String> getPatientIdInputField();
+
+    /**
+     * Getter for the patient ID input field data provider
+     * @return The data provider
+     */
+    ListDataProvider<String> getPatientIdDataProvider();
 
     /**
      * Getter for the sample ID field
